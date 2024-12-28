@@ -18,29 +18,38 @@
                     <button class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5 how-active1" data-filter="*">
                         All Products
                     </button>
-                    <% for (let category of categories) { %>
-                    <button class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5" data-filter=".<%= category %>">
-                        <%= category %>
+                    <% 
+                    // Sắp xếp categories theo alphabet
+                    const sortedCategories = [...categories].sort();
+                    for (let category of sortedCategories) { 
+                        // Chuyển đổi category thành dạng hiển thị đẹp
+                        const displayCategory = category.split(' ').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ');
+                    %>
+                    <button class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5" data-filter=".<%= category.replace(/\s+/g, '-') %>">
+                        <%= displayCategory %>
                     </button>
                     <% } %>
                 </div>
             </div>
 
             <div class="row isotope-grid">
-                <% for (let product of products) { %>
-                <div class="col-sm-6 col-md-4 col-lg-3 p-b-35 isotope-item <%= product.category %>">
+                <% for (let product of listproducts) { %>
+                <div class="col-sm-6 col-md-4 col-lg-3 p-b-35 isotope-item <%= product.category.replace(/\s+/g, '-').toLowerCase() %>">
                     <!-- Block2 -->
                     <div class="block2">
                         <div class="block2-pic hov-img0">
-                            <img src="<%= product.image %>" alt="<%= product.productname %>">
+                            <img src="<%= product.imagePath %>" alt="<%= product.productname %>">
 
                             <a href="#" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 js-show-modal1"
                                 data-id="<%= product._id %>"
                                 data-name="<%= product.productname %>"
                                 data-price="<%= product.price %>"
-                                data-description="<%= product.description %>"
-                                data-img="<%= product.image %>"
-                                data-quantity="<%= product.quantity %>">
+                                data-description="<%= product.description.length > 100 ? product.description.substring(0, 50) + '...' : product.description %>"
+                                data-img="<%= product.imagePath %>"
+                                data-quantity="<%= product.quantity %>"
+                                data-category="<%= product.category %>">
                                 Quick View
                             </a>
                         </div>
@@ -60,12 +69,6 @@
                                 </span>
                             </div>
 
-                            <div class="block2-txt-child2 flex-r p-t-3">
-                                <a href="#" class="btn-addwish-b2 dis-block pos-relative js-addwish-b2">
-                                    <img class="icon-heart1 dis-block trans-04" src="images/icons/icon-heart-01.png" alt="ICON">
-                                    <img class="icon-heart2 dis-block trans-04 ab-t-l" src="images/icons/icon-heart-02.png" alt="ICON">
-                                </a>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -86,3 +89,65 @@
     <%- include('../includes/cart-r-side.ejs') %>
     <%- include('../includes/modal.ejs') %>
     <%- include('../includes/end.ejs') %>
+    <script>
+        $(document).ready(function() {
+            // Khởi tạo Isotope
+            var $grid = $('.isotope-grid').isotope({
+                itemSelector: '.isotope-item',
+                layoutMode: 'fitRows'
+            });
+
+            // Filter items on button click
+            $('.filter-tope-group').on('click', 'button', function() {
+                var filterValue = $(this).attr('data-filter');
+                
+                // Xóa class active khỏi tất cả các buttons
+                $('.filter-tope-group button').removeClass('how-active1');
+                // Thêm class active vào button được click
+                $(this).addClass('how-active1');
+                
+                // Filter các sản phẩm
+                $grid.isotope({ filter: filterValue });
+            });
+
+            // Xử lý scroll đến danh mục khi có hash trong URL
+            if (window.location.hash) {
+                var category = window.location.hash.substring(1); // Bỏ dấu # ở đầu
+                var filterValue = '.' + category.toLowerCase().replace(/\s+/g, '-');
+                
+                // Filter sản phẩm
+                $grid.isotope({ filter: filterValue });
+                
+                // Active button tương ứng
+                $('.filter-tope-group button').removeClass('how-active1');
+                $('.filter-tope-group button[data-filter="' + filterValue + '"]').addClass('how-active1');
+                
+                // Scroll đến vị trí của grid
+                setTimeout(function() {
+                    $('html, body').animate({
+                        scrollTop: $('.isotope-grid').offset().top - 100
+                    }, 500);
+                }, 200);
+            }
+
+            // Xử lý sự kiện click vào Quick View
+            $('.js-show-modal1').on('click', function(e) {
+                e.preventDefault();
+                const $this = $(this);
+                
+                // Lấy dữ liệu từ data attributes
+                const productname = $this.data('name');
+                const price = $this.data('price');
+                const description = $this.data('description');
+                const imagePath = $this.data('img');
+                const category = $this.data('category');
+                const productId = $this.data('id');
+                const quantity = $this.data('quantity');
+
+                // Gọi hàm showdata để hiển thị modal
+                showdata(productname, price, description, imagePath, category, productId, quantity);
+            });
+        });
+    </script>
+</body>
+</html>

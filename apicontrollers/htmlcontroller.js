@@ -39,12 +39,12 @@ module.exports = function(app) {
     });
   }),
     app.get("/about", function(req, res, next) {
-      res.render("general/about", {
+      res.render("about", {
       });
     });
 
   app.get("/blog", function(req, res, next) {
-    res.render("general/blog", {
+    res.render("blog", {
     });
   });
 
@@ -130,18 +130,38 @@ module.exports = function(app) {
 
 
   //allproduct
-  app.get("/allproducts", function(req, res, next) {
-    req.session.isManager = false;
-    var count = 0;
-    ProductModel.find()
-      .then(products => {
-        res.render("product/page-product", {
-          kind: 'allproducts',
-          listproducts: products
-        });
-      })
-      .catch(err => {
-        console.log(err);
+  app.get("/allproducts", async function(req, res, next) {
+    try {
+      req.session.isManager = false;
+      
+      // Lấy tất cả sản phẩm
+      const products = await ProductModel.find();
+      
+      // Chuẩn hóa category trước khi lấy unique
+      const normalizedProducts = products.map(product => ({
+        ...product._doc,
+        category: product.category.trim().toLowerCase()
+      }));
+      
+      // Lấy danh sách categories duy nhất từ sản phẩm đã chuẩn hóa
+      const categories = [...new Set(normalizedProducts.map(product => product.category))];
+      
+      // Log để kiểm tra
+      console.log('Categories:', categories);
+      console.log('Products by category:');
+      categories.forEach(category => {
+        const productsInCategory = normalizedProducts.filter(p => p.category === category);
+        console.log(`${category}:`, productsInCategory.map(p => p.productname));
       });
+      
+      res.render("product/page-product", {
+        kind: 'allproducts',
+        listproducts: normalizedProducts,
+        categories: categories
+      });
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
   });
 };
